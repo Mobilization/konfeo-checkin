@@ -65,23 +65,37 @@ class LoginIntentService : IntentService("LoginIntentService") {
                     .method(Connection.Method.POST)
                     .execute()
 
-            if(postResponse.statusCode() !in intArrayOf(200, 302))
+            if(postResponse.statusCode() !in intArrayOf(200, 302)) {
                 sendNotOK("Error: Http response code ${postResponse.statusCode()}")
+                return
+            }
 
-            val elementsByClass = postResponse.parse().getElementsByClass("alert alert-danger")
 
-            if(elementsByClass.size > 1)
-                sendNotOK(elementsByClass[0].data())
+            val document = postResponse.parse()
+            val elementsByAlertDangerClass = document.getElementsByClass("alert alert-danger")
 
-            sendOK()
+            if(elementsByAlertDangerClass.size > 0) {
+                sendNotOK(elementsByAlertDangerClass[0].text())
+                return
+            }
+
+            val elementsByAlertInfoClass = document.getElementsByClass("alert alert-info")
+
+            if(elementsByAlertInfoClass.size > 0) {
+                sendOK(elementsByAlertInfoClass[0].text())
+                return
+            }
+
+            sendOK(document.title())
         }
         catch (e: Exception) {
             sendNotOK(e.toString())
         }
     }
 
-    private fun sendOK() {
+    private fun sendOK(reason : String) {
         val bundle = Bundle()
+        bundle.putString(RESULT_PARAM_REASON, reason)
         parcelableExtra.send(RESULT_LOGIN_SUCCESSFUL, bundle)
     }
 
