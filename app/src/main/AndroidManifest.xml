@@ -27,6 +27,9 @@
 
         <service
             android:name="pl.mobilization.konfeo.checkin.LoginIntentService"
+            android:exported="false" />
+        <service
+            android:name="pl.mobilization.konfeo.checkin.EventListService"
             android:exported="false"></service>
     </application>
 
