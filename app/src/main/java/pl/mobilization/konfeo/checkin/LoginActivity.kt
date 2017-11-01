@@ -3,30 +3,14 @@ package pl.mobilization.konfeo.checkin
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.annotation.TargetApi
-import android.content.pm.PackageManager
-import android.support.design.widget.Snackbar
+import android.os.*
 import android.support.v7.app.AppCompatActivity
-import android.app.LoaderManager.LoaderCallbacks
-import android.content.CursorLoader
-import android.content.Loader
-import android.database.Cursor
-import android.net.Uri
-import android.provider.ContactsContract
 import android.text.TextUtils
 import android.view.View
 import android.view.inputmethod.EditorInfo
-import android.widget.ArrayAdapter
 import android.widget.TextView
-
-import java.util.ArrayList
-import android.Manifest.permission.READ_CONTACTS
-import android.os.*
 import checkin.konfeo.com.konfeocheckin.R
-
 import kotlinx.android.synthetic.main.activity_login.*
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.launch
-import org.jsoup.Connection
 import pl.mobilization.konfeo.checkin.LoginIntentService.Companion.startActionLogin
 
 /**
@@ -108,10 +92,17 @@ class LoginActivity : AppCompatActivity() {
                 pl.mobilization.konfeo.checkin.RESULT_LOGIN_FAILED -> {
                     showProgress(false)
                     resultData?.let {
-                        email_sign_in_button.error = it.getString(pl.mobilization.konfeo.checkin.RESULT_PARAM_REASON)
+                        error_text.text = getString(R.string.login_failed)
+                        error_text.error = it.getString(pl.mobilization.konfeo.checkin.RESULT_PARAM_REASON)
                     }
                 }
-                pl.mobilization.konfeo.checkin.RESULT_LOGIN_SUCCESSFUL -> showProgress(false)
+                pl.mobilization.konfeo.checkin.RESULT_LOGIN_SUCCESSFUL -> {
+                    showProgress(false)
+                    resultData?.let {
+                        error_text.text = it.getString(pl.mobilization.konfeo.checkin.RESULT_PARAM_REASON)
+                        error_text.error = null
+                    }
+                }
             }
 
         }
