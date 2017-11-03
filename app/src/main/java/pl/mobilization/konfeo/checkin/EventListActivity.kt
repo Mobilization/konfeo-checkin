@@ -10,10 +10,12 @@ import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import checkin.konfeo.com.konfeocheckin.R
 import kotlinx.android.synthetic.main.activity_event_list.*
+import kotlinx.android.synthetic.main.list_item.view.*
 
 class EventListActivity : AppCompatActivity() {
     val eventAdapter = EventAdapter()
@@ -53,15 +55,14 @@ class EventListActivity : AppCompatActivity() {
 
 data class Event(val text: String, val url: String)
 
-class EventHolder(private val view: TextView) : RecyclerView.ViewHolder(view) {
+class EventHolder(private val view: View) : RecyclerView.ViewHolder(view) {
+    private val textView : TextView
     init {
-        view.text = "Not empty"
+        textView = view.textViewEvent
     }
-    fun setText(text : String) = {
-        view.text = text
+    fun setText(text: String) {
+        textView.text = text
     }
-
-
 }
 
 class EventAdapter : RecyclerView.Adapter<EventHolder>() {
@@ -69,15 +70,15 @@ class EventAdapter : RecyclerView.Adapter<EventHolder>() {
 
     override fun onBindViewHolder(holder: EventHolder, position: Int) {
         val event = events[position]
-            holder.setText(event.text)
+        holder.setText(event.text)
     }
 
     override fun getItemCount() = events.size
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EventHolder {
 
-        val inflate : TextView = LayoutInflater.from(parent.context).inflate(R.layout.list_item, null) as TextView
-        return EventHolder(inflate)
+        val textView = LayoutInflater.from(parent.context).inflate(R.layout.list_item, null)
+        return EventHolder(textView)
     }
 
     fun addEvent(event: Event) {
