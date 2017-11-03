@@ -29,7 +29,7 @@ class EventListActivity : AppCompatActivity() {
         recyclerViewEvents.layoutManager = LinearLayoutManager(this)
         recyclerViewEvents.itemAnimator = DefaultItemAnimator()
 
-        pl.mobilization.konfeo.checkin.EventListService.Companion.startActionEvents(this,true , EventResultReceiver())
+        pl.mobilization.konfeo.checkin.LoginIntentService.Companion.startActionEvents(this,true , EventResultReceiver())
     }
 
     override fun onResume() {
@@ -55,14 +55,22 @@ class EventListActivity : AppCompatActivity() {
 
 data class Event(val text: String, val url: String)
 
-class EventHolder(private val view: View) : RecyclerView.ViewHolder(view) {
+class EventHolder(private val view: View) : RecyclerView.ViewHolder(view), View.OnClickListener {
+    val TAG = EventHolder::class.java.simpleName.toString()
     private val textView : TextView
     init {
         textView = view.textViewEvent
+        view.setOnClickListener(this)
     }
     fun setText(text: String) {
         textView.text = text
     }
+
+    override fun onClick(view: View) {
+        Log.d(TAG, "onClick")
+    }
+
+    var url: String = ""
 }
 
 class EventAdapter : RecyclerView.Adapter<EventHolder>() {
@@ -71,6 +79,7 @@ class EventAdapter : RecyclerView.Adapter<EventHolder>() {
     override fun onBindViewHolder(holder: EventHolder, position: Int) {
         val event = events[position]
         holder.setText(event.text)
+        holder.url = event.url
     }
 
     override fun getItemCount() = events.size
