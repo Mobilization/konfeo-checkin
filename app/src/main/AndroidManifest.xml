@@ -30,7 +30,9 @@
             android:exported="false" />
         <service
             android:name="pl.mobilization.konfeo.checkin.EventListService"
-            android:exported="false"></service>
+            android:exported="false" />
+
+        <activity android:name="pl.mobilization.konfeo.checkin.EventListActivity"></activity>
     </application>
 
 </manifest>

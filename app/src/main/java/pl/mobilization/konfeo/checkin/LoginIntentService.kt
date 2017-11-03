@@ -24,10 +24,13 @@ val KONFEO_LOGIN_URL = "https://admin.konfeo.com/pl/login"
 val RESULT_LOGIN_SUCCESSFUL = 1
 val RESULT_LOGIN_FAILED = 2
 
-val RESULT_PARAM_REASON = "pl.mobilization.konfeo.checkin.extra.REASON"
+val RESULT_PARAM_REASON = "pl.mobilization.konfeo.checkin.result.REASON"
+
+val COOKIE_MAP = mutableMapOf<String, String>()
+val HEADERS_MAP = mutableMapOf<String, String>()
 
 class LoginIntentService : IntentService("LoginIntentService") {
-    lateinit var parcelableExtra : ResultReceiver
+    lateinit var resultReceiver: ResultReceiver
 
     override fun onHandleIntent(intent: Intent?) {
         if (intent != null) {
@@ -35,7 +38,7 @@ class LoginIntentService : IntentService("LoginIntentService") {
             if (ACTION_LOGIN == action) {
                 val param1 = intent.getStringExtra(LOGIN_PARAM)
                 val param2 = intent.getStringExtra(PASSWORD_PARAM)
-                parcelableExtra = intent.getParcelableExtra<ResultReceiver>(RECEIVER_PARAM)
+                resultReceiver = intent.getParcelableExtra<ResultReceiver>(RECEIVER_PARAM)
                 handleActionLogin(param1, param2)
             }
         }
@@ -52,6 +55,8 @@ class LoginIntentService : IntentService("LoginIntentService") {
                     .execute()
 
             val cookies = response.cookies()
+
+            COOKIE_MAP.putAll(cookies)
 
             val elementsByAttributeValue = response.parse().getElementsByAttributeValue("name", "authenticity_token")
 
@@ -70,6 +75,7 @@ class LoginIntentService : IntentService("LoginIntentService") {
                 return
             }
 
+            COOKIE_MAP.putAll(postResponse.cookies())
 
             val document = postResponse.parse()
             val elementsByAlertDangerClass = document.getElementsByClass("alert alert-danger")
@@ -96,13 +102,13 @@ class LoginIntentService : IntentService("LoginIntentService") {
     private fun sendOK(reason : String) {
         val bundle = Bundle()
         bundle.putString(RESULT_PARAM_REASON, reason)
-        parcelableExtra.send(RESULT_LOGIN_SUCCESSFUL, bundle)
+        resultReceiver.send(RESULT_LOGIN_SUCCESSFUL, bundle)
     }
 
     private fun sendNotOK(reason: String) {
         val bundle = Bundle()
         bundle.putString(RESULT_PARAM_REASON, reason)
-        parcelableExtra.send(RESULT_LOGIN_FAILED, bundle)
+        resultReceiver.send(RESULT_LOGIN_FAILED, bundle)
     }
 
     companion object {

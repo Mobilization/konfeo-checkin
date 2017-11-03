@@ -3,6 +3,7 @@ package pl.mobilization.konfeo.checkin
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.annotation.TargetApi
+import android.content.Intent
 import android.os.*
 import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
@@ -101,6 +102,7 @@ class LoginActivity : AppCompatActivity() {
                     resultData?.let {
                         error_text.text = it.getString(pl.mobilization.konfeo.checkin.RESULT_PARAM_REASON)
                         error_text.error = null
+                        error_text.postDelayed(Runnable {  startActivity(Intent(this@LoginActivity, EventListActivity::class.java ))}, 1000)
                     }
                 }
             }
