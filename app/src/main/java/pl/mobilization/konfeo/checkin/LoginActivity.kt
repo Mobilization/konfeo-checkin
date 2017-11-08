@@ -12,7 +12,7 @@ import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import checkin.konfeo.com.konfeocheckin.R
 import kotlinx.android.synthetic.main.activity_login.*
-import pl.mobilization.konfeo.checkin.LoginIntentService.Companion.startActionLogin
+import pl.mobilization.konfeo.checkin.KonfeoIntentService.Companion.startActionLogin
 
 /**
  * A login screen that offers login via email/password.

@@ -26,13 +26,14 @@
         </activity>
 
         <service
-            android:name="pl.mobilization.konfeo.checkin.LoginIntentService"
+            android:name="pl.mobilization.konfeo.checkin.KonfeoIntentService"
             android:exported="false" />
         <service
             android:name="pl.mobilization.konfeo.checkin.EventListService"
             android:exported="false" />
 
-        <activity android:name="pl.mobilization.konfeo.checkin.EventListActivity"></activity>
+        <activity android:name="pl.mobilization.konfeo.checkin.EventListActivity" />
+        <activity android:name="pl.mobilization.konfeo.checkin.AttendeesActivity"></activity>
     </application>
 
 </manifest>

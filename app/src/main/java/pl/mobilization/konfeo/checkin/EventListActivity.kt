@@ -1,10 +1,12 @@
 package pl.mobilization.konfeo.checkin
 
+import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.ResultReceiver
+import android.support.v4.content.ContextCompat.startActivity
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -29,7 +31,7 @@ class EventListActivity : AppCompatActivity() {
         recyclerViewEvents.layoutManager = LinearLayoutManager(this)
         recyclerViewEvents.itemAnimator = DefaultItemAnimator()
 
-        pl.mobilization.konfeo.checkin.LoginIntentService.Companion.startActionEvents(this,true , EventResultReceiver())
+        pl.mobilization.konfeo.checkin.KonfeoIntentService.Companion.startActionEvents(this,true , EventResultReceiver())
     }
 
     override fun onResume() {
@@ -67,7 +69,9 @@ class EventHolder(private val view: View) : RecyclerView.ViewHolder(view), View.
     }
 
     override fun onClick(view: View) {
-        Log.d(TAG, "onClick")
+        val intent = Intent(view.context, AttendeesActivity::class.java)
+        intent.putExtra(EVENT_URL_PARAM, url)
+        startActivity(view.context, intent, null)
     }
 
     var url: String = ""
