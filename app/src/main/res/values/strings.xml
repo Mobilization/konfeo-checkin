@@ -15,4 +15,5 @@
     </string>
     <string name="login_failed">Login failed</string>
     <string name="include_finished">Include finished</string>
+    <string name="search_title">Search Attendees</string>
 </resources>
