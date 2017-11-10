@@ -14,6 +14,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVRecord
 import org.jsoup.Jsoup
 import android.arch.persistence.room.Room
+import okhttp3.HttpUrl
 import pl.mobilization.konfeo.checkin.entities.Attendee
 import pl.mobilization.konfeo.checkin.entities.AttendeeDatabase
 
@@ -75,7 +76,7 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
     override fun onHandleIntent(intent: Intent?) {
         if (intent != null) {
             val action = intent.action
-            resultReceiver = intent.getParcelableExtra<ResultReceiver>(RECEIVER_PARAM)
+                resultReceiver = intent.getParcelableExtra(RECEIVER_PARAM)
             if (ACTION_LOGIN.equals(action)) {
                 val param1 = intent.getStringExtra(LOGIN_PARAM)
                 val param2 = intent.getStringExtra(PASSWORD_PARAM)
@@ -157,6 +158,13 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
             if (!getResponse.isSuccessful) {
                 return sendNotOK("Get response ${getResponse.code()}")
             }
+
+            val url = getResponse.request().url()
+
+            if(url.equals(HttpUrl.Builder().scheme("https").host("admin.konfeo.com").addPathSegment("dashboard").build())) {
+                return sendOK("Already logged in")
+            }
+
             getResponse.body()?.let {
                 val elementsByAttributeValue = Jsoup.parse(it.string()).getElementsByAttributeValue("name", "authenticity_token")
                 val authenticityToken = elementsByAttributeValue.`val`()
