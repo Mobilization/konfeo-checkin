@@ -17,7 +17,8 @@ import android.view.ViewGroup
 import android.widget.TextView
 import checkin.konfeo.com.konfeocheckin.R
 import kotlinx.android.synthetic.main.activity_event_list.*
-import kotlinx.android.synthetic.main.list_item.view.*
+import kotlinx.android.synthetic.main.event_list_item.view.*
+import org.jetbrains.anko.toast
 
 class EventListActivity : AppCompatActivity() {
     val eventAdapter = EventAdapter()
@@ -32,10 +33,6 @@ class EventListActivity : AppCompatActivity() {
         recyclerViewEvents.itemAnimator = DefaultItemAnimator()
 
         pl.mobilization.konfeo.checkin.KonfeoIntentService.Companion.startActionEvents(this,true , EventResultReceiver())
-    }
-
-    override fun onResume() {
-        super.onResume()
     }
 
     internal inner class EventResultReceiver : ResultReceiver(Handler(Looper.getMainLooper())) {
@@ -90,7 +87,7 @@ class EventAdapter : RecyclerView.Adapter<EventHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EventHolder {
 
-        val textView = LayoutInflater.from(parent.context).inflate(R.layout.list_item, null)
+        val textView = LayoutInflater.from(parent.context).inflate(R.layout.event_list_item, null)
         return EventHolder(textView)
     }
 

@@ -1,7 +1,6 @@
 package checkin.konfeo.com.konfeocheckin
 
 import android.arch.persistence.room.Room
-import android.arch.persistence.room.RoomDatabase
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 
@@ -27,7 +26,7 @@ class ExampleInstrumentedTest {
         val attendees = db.attendeeDAO().getAttendees()
         assertNotNull(attendees)
 
-        val attendee = Attendee(Long.MAX_VALUE, "Marek", "Defeciński", "marekdef@tlen.pl", "Organizer", Integer.MAX_VALUE.toLong(), false)
+        val attendee = Attendee(Long.MAX_VALUE, "Marek", "Defeciński", "marekdef@tlen.pl", "Organizer", Integer.MAX_VALUE.toLong(), false, false, event_id = "0")
 
         db.attendeeDAO().insertAttendees(attendee)
 

@@ -20,6 +20,12 @@ interface AttendeeDAO {
     @Query("SELECT * FROM attendee")
     fun getAttendees() : List<Attendee>
 
+    @Query("SELECT * FROM attendee WHERE needs_update = 1")
+    fun getAttendeesToUpdate() : List<Attendee>
+
+    @Query("SELECT id FROM attendee WHERE needs_update = 1")
+    fun getAttendeeIdsToUpdate() : List<Long>
+
     @Query("SELECT * FROM attendee WHERE first_name LIKE :filter OR last_name LIKE :filter OR email LIKE :filter")
     fun getAttendees(filter: String) : List<Attendee>
 }

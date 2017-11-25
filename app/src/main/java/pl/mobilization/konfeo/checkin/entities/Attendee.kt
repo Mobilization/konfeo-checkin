@@ -17,23 +17,37 @@ data class Attendee(
         var email: String,
         var group: String,
         var number: Long?,
-        var needs_update: Boolean = false
+        var needs_update: Boolean = false,
+        var checked_in: Boolean = false,
+        var event_id: String
 ) {
-    @Ignore
-    private var _last_name_normalized: String = ""
-    val last_name_normalized : String
-    get() {
-        if(_last_name_normalized == null)
-            _last_name_normalized = StringUtils.stripAccents(last_name)
-        return _last_name_normalized
+    @delegate:Ignore
+    val last_name_normalized : String by lazy {
+        StringUtils.stripAccents(last_name.toLowerCase())
     }
 
-    @Ignore
-    private var _first_name_normalized: String = ""
-    val first_name_normalized : String
-        get() {
-            if(_first_name_normalized == null)
-                _first_name_normalized = StringUtils.stripAccents(last_name)
-            return _first_name_normalized
-        }
+    @delegate:Ignore
+    val first_name_normalized : String by lazy {
+        StringUtils.stripAccents(first_name.toLowerCase())
+    }
+
+    @delegate:Ignore
+    val number_string : String by lazy {
+        number.toString()
+    }
+
+    @delegate:Ignore
+    val id_string: String by lazy {
+        id.toString()
+    }
+
+
+    fun matches(filter: String): Boolean {
+        return last_name_normalized.startsWith(filter)
+                || first_name_normalized.startsWith(filter)
+                || email.contains(filter)
+                || number_string.contains(filter)
+                || id_string.contains(filter)
+    }
 }
+
