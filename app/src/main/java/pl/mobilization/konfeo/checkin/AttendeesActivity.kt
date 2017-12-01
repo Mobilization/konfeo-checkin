@@ -1,6 +1,5 @@
 package pl.mobilization.konfeo.checkin
 
-import android.app.SearchManager
 import android.arch.persistence.room.Room
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -14,16 +13,15 @@ import checkin.konfeo.com.konfeocheckin.R
 import kotlinx.android.synthetic.main.activity_attendees.*
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
-import pl.mobilization.konfeo.checkin.entities.AttendeeDatabase
+import pl.mobilization.konfeo.checkin.entities.KonfeoDatabase
 
-import android.content.Context
-import android.content.Intent
 import android.support.v7.widget.SearchView
+import pl.mobilization.konfeo.checkin.adapters.AttendeeAdapter
 
 
 class AttendeesActivity : AppCompatActivity() {
 
-    lateinit var db: AttendeeDatabase
+    lateinit var db: KonfeoDatabase
 
     lateinit var attendeeAdapter: AttendeeAdapter
 
@@ -31,10 +29,13 @@ class AttendeesActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         db = Room.databaseBuilder(applicationContext,
-                AttendeeDatabase::class.java, "attendees")
-                .addMigrations(AttendeeDatabase.MIGRATION_1_2, AttendeeDatabase.MIGRATION_2_3).build()
+                KonfeoDatabase::class.java, "konfeo").build()
 
         setContentView(R.layout.activity_attendees)
+
+
+
+        supportActionBar?.setDisplayShowTitleEnabled(false)
 
         recyclerViewAttendees.itemAnimator = DefaultItemAnimator()
         recyclerViewAttendees.layoutManager = LinearLayoutManager(this)
@@ -42,10 +43,7 @@ class AttendeesActivity : AppCompatActivity() {
         attendeeAdapter = AttendeeAdapter(this)
         recyclerViewAttendees.adapter = attendeeAdapter
 
-        val event_url = intent.getStringExtra(EVENT_URL_PARAM)
-        event_url?.let {
-            pl.mobilization.konfeo.checkin.KonfeoIntentService.Companion.startActionUsers(this, it, AttendeesReceiver())
-        }
+        resetAttendees()
     }
 
     private fun filter_attendees(query: String) {
@@ -59,7 +57,7 @@ class AttendeesActivity : AppCompatActivity() {
         searchView.setIconifiedByDefault(false) // Do not iconify the widget; expand it by default
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextChange(newText: String): Boolean {
-                if (newText.trim().length < 3) {
+                if (newText.trim().length in 1..2) {
                     return false
                 }
 
@@ -78,12 +76,17 @@ class AttendeesActivity : AppCompatActivity() {
 
     internal inner class AttendeesReceiver : ResultReceiver(Handler(Looper.getMainLooper())) {
         override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
-            launch {
-                val attendees = db.attendeeDAO().getAttendees()
+            resetAttendees()
+        }
+    }
 
-                launch(UI) {
-                    attendeeAdapter.add(attendees)
-                }
+    private fun resetAttendees() {
+        launch {
+            val eventsId = db.eventsDAO().getEnabledEventIds()
+            val attendees = db.attendeeDAO().getAttendees(eventsId)
+
+            launch(UI) {
+                attendeeAdapter.add(attendees)
             }
         }
     }

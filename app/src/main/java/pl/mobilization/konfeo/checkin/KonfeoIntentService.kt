@@ -8,13 +8,14 @@ import android.os.ResultReceiver
 import com.franmontiel.persistentcookiejar.cache.SetCookieCache
 import com.franmontiel.persistentcookiejar.persistence.SharedPrefsCookiePersistor
 import org.apache.commons.csv.CSVFormat
-import org.apache.commons.csv.CSVRecord
 import org.jsoup.Jsoup
 import android.arch.persistence.room.Room
 import android.util.Log
 import okhttp3.*
+import org.jsoup.select.Elements
 import pl.mobilization.konfeo.checkin.entities.Attendee
-import pl.mobilization.konfeo.checkin.entities.AttendeeDatabase
+import pl.mobilization.konfeo.checkin.entities.Event
+import pl.mobilization.konfeo.checkin.entities.KonfeoDatabase
 
 
 /**
@@ -58,7 +59,7 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
 
     private lateinit var okHttpClient: OkHttpClient
 
-    private lateinit var db: AttendeeDatabase
+    private lateinit var db: KonfeoDatabase
 
     private lateinit var sharedPrefsCookiePersistor: SharedPrefsCookiePersistor
 
@@ -70,8 +71,7 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
                 .build()
 
         db = Room.databaseBuilder(applicationContext,
-                AttendeeDatabase::class.java, "attendees")
-                .addMigrations(AttendeeDatabase.MIGRATION_1_2, AttendeeDatabase.MIGRATION_2_3).build()
+                KonfeoDatabase::class.java, "konfeo").build()
 
         return super.onStartCommand(intent, flags, startId)
     }
@@ -85,11 +85,9 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
                 val param2 = intent.getStringExtra(PASSWORD_PARAM)
                 handleActionLogin(param1, param2)
             } else if (ACTION_EVENTS.equals(action)) {
-                val includeFinished = intent.getBooleanExtra(INCLUDE_FINISHED, false)
-                handleActionFindEvents(includeFinished)
+                handleActionFindEvents()
             } else if (ACTION_USERS.equals(action)) {
-                val url = intent.getStringExtra(EVENT_URL_PARAM)
-                handleActionUsers(url)
+                handleActionUsers()
             } else if (ACTION_UPDATE.equals(action)) {
                 handleActionUpdate()
             }
@@ -97,11 +95,12 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
     }
 
     private fun handleActionUpdate() {
-        val attendeesToUpdate = db.attendeeDAO().getAttendeesToUpdate()
+        val enabledEventIds = db.eventsDAO().getEnabledEventIds()
+        val attendeesToUpdate = db.attendeeDAO().getAttendeesToUpdate(enabledEventIds)
 
         attendeesToUpdate.groupBy {
             it.checked_in
-        }.forEach() {
+        }.forEach {
             when(it.key) {
                 true -> checkIn(it.value)
                 false -> checkOut(it.value)
@@ -180,64 +179,89 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
         }
     }
 
-    private fun handleActionUsers(url: String) {
-        val eventId = url.substring(8, url.length - 10)
+    private fun handleActionUsers() {
 
-        val response = okHttpClient.newCall(Request.Builder().url("https://admin.konfeo.com/events/$eventId/attendees.csv?format=csv").build()).execute()
+        val enabledEventIds = db.eventsDAO().getEnabledEventIds()
 
-        response.body()?.let {
-            val attendees = mutableListOf<Attendee>()
+        enabledEventIds.forEach {
+            val eventId = it
+            val response = okHttpClient.newCall(Request.Builder().url("https://admin.konfeo.com/events/$eventId/attendees.csv?format=csv").build()).execute()
 
-            val records = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(it.charStream())
+            response.body()?.let {
+                val attendees = mutableListOf<Attendee>()
 
-            val attendeeIdsToUpdate = db.attendeeDAO().getAttendeeIdsToUpdate()
+                val records = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(it.charStream())
 
-            records.forEach({
-                val id = it.get(0).toLong()
+                records.forEach({
+                    val id = it.get(0).toLong()
+                        attendees.add(Attendee(
+                                id = id,
+                                first_name = it.get("Imię"),
+                                last_name = it.get("Nazwisko"),
+                                email = it.get("E-mail"),
+                                group = it.get("Grupa"),
+                                number = it.get("Number biletu").toLongOrNull(),
+                                checked_in = it.get("Status").equals("Obecny", ignoreCase = true),
+                                event_id = eventId
+                        )
+                        )
+                })
 
-                if(!attendeeIdsToUpdate.contains(id))
-                    attendees.add(Attendee(
-                            id = id,
-                            first_name = it.get("Imię"),
-                            last_name = it.get("Nazwisko"),
-                            email = it.get("E-mail"),
-                            group = it.get("Grupa"),
-                            number = it.get("Number biletu").toLongOrNull(),
-                            checked_in = it.get("Status").equals("Obecny", ignoreCase = true),
-                            event_id = eventId
-                    ))
-            })
+                db.attendeeDAO().insertAttendees(attendees)
 
-            db.attendeeDAO().insertAttendees(*attendees.toTypedArray())
-            resultReceiver.send(RESULT_ATTENDEES_PARSED, Bundle())
-
-            it.close()
+                it.close()
+            }
         }
 
+        resultReceiver.send(RESULT_ATTENDEES_PARSED, Bundle())
     }
 
     /**
      * Handle action Foo in the provided background thread with the provided
      * parameters.
      */
-    private fun handleActionFindEvents(includeFinished: Boolean) {
-        val response = okHttpClient.newCall(Request.Builder().url("https://admin.konfeo.com/events/closed").build()).execute()
+    private fun handleActionFindEvents() {
+        val response = okHttpClient.newCall(Request.Builder().url("https://admin.konfeo.com/events").build()).execute()
+        val events = parseEvents(response)
 
+        db.eventsDAO().insertEvents(events)
+
+        val responseClosed = okHttpClient.newCall(Request.Builder().url("https://admin.konfeo.com/events/closed").build()).execute()
+        val closedEvents = parseEvents(responseClosed)
+
+        db.eventsDAO().insertEvents(closedEvents)
+
+        val bundle = Bundle()
+        resultReceiver.send(RESULT_EVENT_PAID, bundle)
+    }
+
+    private fun parseEvents(response: Response): List<Event> {
+        val events = mutableListOf<Event>()
         response.body()?.let {
-            val events = Jsoup.parse(it.string())
-            val eventFullViewTable = events.getElementById("event-full-view-table")
+            val html = it.string()
+            val document = Jsoup.parse(html)
+            val eventFullViewTable = document.getElementById("event-full-view-table")
 
-            val elementsByEventPayClass = eventFullViewTable.getElementsByClass("event-pay")
+            if (eventFullViewTable != null) {
+                val elementsByEventPayClass = eventFullViewTable.getElementsByClass("event-pay")
+                parseEvent(elementsByEventPayClass, events)
 
-            for (eventPay in elementsByEventPayClass) {
+                val elementsByEventFreeClass = eventFullViewTable.getElementsByClass("event-pay")
+                parseEvent(elementsByEventFreeClass, events)
+            }
 
-                val href = eventPay.attr("href")
-                if (href.endsWith("/dashboard")) {
-                    val bundle = Bundle()
-                    bundle.putString(RESULT_EVENT_NAME, eventPay.text())
-                    bundle.putString(RESULT_EVENT_URL, href)
-                    resultReceiver.send(RESULT_EVENT_PAID, bundle)
-                }
+            it.close()
+        }
+        return events
+    }
+
+    private fun parseEvent(elementsByEventPayClass: Elements, events: MutableList<Event>) {
+        for (eventPay in elementsByEventPayClass) {
+            val href = eventPay.attr("href")
+            if (href.endsWith("/dashboard")) {
+                val id = href.replace(Regex("[^0-9]*"), "")
+
+                events.add(Event(id.toLong(), eventPay.text()))
             }
         }
     }
@@ -338,11 +362,9 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
             context.startService(intent)
         }
 
-
-        fun startActionUsers(context: Context, eventUrl: String, receiver: ResultReceiver) {
+        fun startActionUsers(context: Context, receiver: ResultReceiver) {
             val intent = Intent(context, KonfeoIntentService::class.java)
             intent.action = ACTION_USERS
-            intent.putExtra(EVENT_URL_PARAM, eventUrl)
             intent.putExtra(RECEIVER_PARAM, receiver)
 
             context.startService(intent)

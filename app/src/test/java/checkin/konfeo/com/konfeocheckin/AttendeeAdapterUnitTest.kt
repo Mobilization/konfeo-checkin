@@ -6,7 +6,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
-import pl.mobilization.konfeo.checkin.AttendeeAdapter
+import pl.mobilization.konfeo.checkin.adapters.AttendeeAdapter
 import pl.mobilization.konfeo.checkin.entities.Attendee
 
 /**

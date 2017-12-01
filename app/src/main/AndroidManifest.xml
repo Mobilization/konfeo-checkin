@@ -29,11 +29,24 @@
             android:name="pl.mobilization.konfeo.checkin.KonfeoIntentService"
             android:exported="false" />
 
-        <activity android:name="pl.mobilization.konfeo.checkin.EventListActivity" />
+        <activity android:name="pl.mobilization.konfeo.checkin.EventListActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity
             android:name="pl.mobilization.konfeo.checkin.AttendeesActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:theme="@style/FullscreenTheme"/>
+            android:theme="@style/FullscreenTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name="pl.mobilization.konfeo.checkin.ImportActivity"></activity>
     </application>
 
 </manifest>

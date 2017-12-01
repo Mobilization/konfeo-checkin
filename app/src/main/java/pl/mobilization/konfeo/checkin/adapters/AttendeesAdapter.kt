@@ -1,4 +1,4 @@
-package pl.mobilization.konfeo.checkin
+package pl.mobilization.konfeo.checkin.adapters
 
 import android.arch.persistence.room.Room
 import android.content.Context
@@ -10,7 +10,6 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import checkin.konfeo.com.konfeocheckin.R.layout.attendee_list_item
 import org.apache.commons.lang3.StringUtils
 import pl.mobilization.konfeo.checkin.entities.Attendee
@@ -19,9 +18,10 @@ import java.util.regex.Pattern
 import kotlinx.android.synthetic.main.attendee_list_item.view.*
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
-import pl.mobilization.konfeo.checkin.entities.AttendeeDatabase
+import pl.mobilization.konfeo.checkin.entities.KonfeoDatabase
 
 import org.jetbrains.anko.toast
+import pl.mobilization.konfeo.checkin.KonfeoIntentService
 
 
 class AttendeeHolder(val view: View) : RecyclerView.ViewHolder(view) {
@@ -43,9 +43,8 @@ class AttendeeAdapter(val context: Context) : RecyclerView.Adapter<AttendeeHolde
     private val attendees = mutableMapOf<Long, Attendee>()
     private var filtered: List<Attendee> = arrayListOf<Attendee>()
 
-    private val db: AttendeeDatabase = Room.databaseBuilder(context,
-            AttendeeDatabase::class.java, "attendees")
-            .addMigrations(AttendeeDatabase.MIGRATION_1_2, AttendeeDatabase.MIGRATION_2_3).build()
+    private val db: KonfeoDatabase = Room.databaseBuilder(context,
+            KonfeoDatabase::class.java, "konfeo").build()
 
     private fun updateAttendee(attendee: Attendee) {
         attendee.needs_update = true

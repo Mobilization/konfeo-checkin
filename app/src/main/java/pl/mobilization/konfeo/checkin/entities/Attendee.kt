@@ -9,9 +9,9 @@ import org.apache.commons.lang3.StringUtils
  * Created by defecins on 07/11/2017.
  */
 
-@Entity(tableName = "Attendee")
+@Entity(tableName = "Attendees", primaryKeys = arrayOf("id", "event_id"))
 data class Attendee(
-        @PrimaryKey var id: Long,
+        var id: Long,
         var first_name: String,
         var last_name: String,
         var email: String,
@@ -19,7 +19,7 @@ data class Attendee(
         var number: Long?,
         var needs_update: Boolean = false,
         var checked_in: Boolean = false,
-        var event_id: String
+        var event_id: Long
 ) {
     @delegate:Ignore
     val last_name_normalized : String by lazy {

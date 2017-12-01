@@ -9,7 +9,7 @@ import org.junit.runner.RunWith
 
 import org.junit.Assert.*
 import pl.mobilization.konfeo.checkin.entities.Attendee
-import pl.mobilization.konfeo.checkin.entities.AttendeeDatabase
+import pl.mobilization.konfeo.checkin.entities.KonfeoDatabase
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -21,7 +21,7 @@ class ExampleInstrumentedTest {
     @Test
     fun useAppContext() {
         val db = Room.databaseBuilder(InstrumentationRegistry.getTargetContext(),
-                AttendeeDatabase::class.java, "attendees").build()
+                KonfeoDatabase::class.java, "attendees").build()
 
         val attendees = db.attendeeDAO().getAttendees()
         assertNotNull(attendees)
