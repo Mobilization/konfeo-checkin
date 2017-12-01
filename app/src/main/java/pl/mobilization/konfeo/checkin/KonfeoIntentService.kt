@@ -11,7 +11,10 @@ import org.apache.commons.csv.CSVFormat
 import org.jsoup.Jsoup
 import android.arch.persistence.room.Room
 import android.util.Log
+import kotlinx.coroutines.experimental.android.UI
+import kotlinx.coroutines.experimental.launch
 import okhttp3.*
+import org.jetbrains.anko.toast
 import org.jsoup.select.Elements
 import pl.mobilization.konfeo.checkin.entities.Attendee
 import pl.mobilization.konfeo.checkin.entities.Event
@@ -87,7 +90,7 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
             } else if (ACTION_EVENTS.equals(action)) {
                 handleActionFindEvents()
             } else if (ACTION_USERS.equals(action)) {
-                handleActionUsers()
+                handleActionImport()
             } else if (ACTION_UPDATE.equals(action)) {
                 handleActionUpdate()
             }
@@ -95,8 +98,8 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
     }
 
     private fun handleActionUpdate() {
-        val enabledEventIds = db.eventsDAO().getEnabledEventIds()
-        val attendeesToUpdate = db.attendeeDAO().getAttendeesToUpdate(enabledEventIds)
+        val enabledEvents = db.eventsDAO().getEnabledEvents()
+        val attendeesToUpdate = db.attendeeDAO().getAttendeesToUpdate(enabledEvents.map { it.id })
 
         attendeesToUpdate.groupBy {
             it.checked_in
@@ -179,12 +182,19 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
         }
     }
 
-    private fun handleActionUsers() {
+    private fun handleActionImport() {
+        val enabledEvents = db.eventsDAO().getEnabledEvents()
 
-        val enabledEventIds = db.eventsDAO().getEnabledEventIds()
+        if(enabledEvents.isEmpty()) {
+            launch (UI) {
+                toast("Enable at least one event")
+            }
+            startActivity(Intent(this, EventListActivity::class.java))
+            return
+        }
 
-        enabledEventIds.forEach {
-            val eventId = it
+        enabledEvents.forEach {
+            val eventId = it.id
             val response = okHttpClient.newCall(Request.Builder().url("https://admin.konfeo.com/events/$eventId/attendees.csv?format=csv").build()).execute()
 
             response.body()?.let {
@@ -362,7 +372,7 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
             context.startService(intent)
         }
 
-        fun startActionUsers(context: Context, receiver: ResultReceiver) {
+        fun startActionImport(context: Context, receiver: ResultReceiver) {
             val intent = Intent(context, KonfeoIntentService::class.java)
             intent.action = ACTION_USERS
             intent.putExtra(RECEIVER_PARAM, receiver)

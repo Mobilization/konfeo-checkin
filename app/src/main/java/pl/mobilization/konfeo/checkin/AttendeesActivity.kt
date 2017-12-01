@@ -1,6 +1,7 @@
 package pl.mobilization.konfeo.checkin
 
 import android.arch.persistence.room.Room
+import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -70,11 +71,13 @@ class AttendeesActivity : AppCompatActivity() {
 
     private fun resetAttendees() {
         launch {
-            val eventsId = db.eventsDAO().getEnabledEventIds()
-            if (eventsId.isEmpty())
+            val events = db.eventsDAO().getEnabledEvents()
+            if (events.isEmpty()) {
+                startActivity(Intent(this@AttendeesActivity, EventListActivity::class.java))
                 return@launch
+            }
 
-            val attendees = db.attendeeDAO().getAttendees(eventsId)
+            val attendees = db.attendeeDAO().getAttendees(events.map { it.id })
 
             launch(UI) {
                 attendeeAdapter.add(attendees)

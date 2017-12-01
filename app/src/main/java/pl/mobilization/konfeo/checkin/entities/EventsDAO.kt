@@ -18,8 +18,11 @@ interface EventsDAO {
     @Query("SELECT * from Events")
     fun getEvents() : List<Event>
 
-    @Query("SELECT id from Events WHERE enabled = 1")
-    fun getEnabledEventIds() : List<Long>
+    @Query("SELECT * from Events WHERE enabled = 1")
+    fun getEnabledEvents() : List<Event>
+
+    @Query("SELECT COUNT(*) FROM Events WHERE enabled = 1")
+    fun countEnabledEvents() : Long
 
     @Query("UPDATE Events SET enabled = :checked WHERE id = :id")
     fun checkEvent(id: Long, checked: Boolean)

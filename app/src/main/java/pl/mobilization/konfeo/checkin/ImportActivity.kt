@@ -14,7 +14,7 @@ class ImportActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_import)
 
-        KonfeoIntentService.startActionUsers(this, UsersReceiver())
+        KonfeoIntentService.startActionImport(this, UsersReceiver())
     }
 
     inner class UsersReceiver() : ResultReceiver(Handler(Looper.getMainLooper())) {
