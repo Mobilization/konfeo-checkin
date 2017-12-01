@@ -17,6 +17,7 @@ import java.util.regex.Pattern
 
 import kotlinx.android.synthetic.main.attendee_list_item.view.*
 import kotlinx.coroutines.experimental.android.UI
+import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import pl.mobilization.konfeo.checkin.entities.KonfeoDatabase
 
@@ -40,7 +41,7 @@ class AttendeeHolder(val view: View) : RecyclerView.ViewHolder(view) {
 }
 
 class AttendeeAdapter(val context: Context) : RecyclerView.Adapter<AttendeeHolder>() {
-    private val attendees = mutableMapOf<Long, Attendee>()
+    private val attendees = mutableMapOf<Pair<Long, Long>, Attendee>()
     private var filtered: List<Attendee> = arrayListOf<Attendee>()
 
     private val db: KonfeoDatabase = Room.databaseBuilder(context,
@@ -50,6 +51,7 @@ class AttendeeAdapter(val context: Context) : RecyclerView.Adapter<AttendeeHolde
         attendee.needs_update = true
         launch {
             db.attendeeDAO().updateAttendees(attendee)
+            delay(5000)
             KonfeoIntentService.startActionUpdate(this@AttendeeAdapter.context, AttendeeUpdateReceiver())
         }
     }
@@ -76,7 +78,7 @@ class AttendeeAdapter(val context: Context) : RecyclerView.Adapter<AttendeeHolde
 
     fun add(attendees: List<Attendee>) {
         for (attendee in attendees) {
-            this.attendees.put(attendee.id, attendee)
+            this.attendees.put(Pair(attendee.id, attendee.event_id), attendee)
         }
         requery()
     }

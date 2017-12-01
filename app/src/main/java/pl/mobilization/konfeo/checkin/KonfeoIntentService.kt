@@ -14,6 +14,7 @@ import android.util.Log
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
 import okhttp3.*
+import org.apache.commons.csv.CSVRecord
 import org.jetbrains.anko.toast
 import org.jsoup.select.Elements
 import pl.mobilization.konfeo.checkin.entities.Attendee
@@ -101,41 +102,46 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
         val enabledEvents = db.eventsDAO().getEnabledEvents()
         val attendeesToUpdate = db.attendeeDAO().getAttendeesToUpdate(enabledEvents.map { it.id })
 
+        if(attendeesToUpdate.isEmpty())
+            return
+
         attendeesToUpdate.groupBy {
             it.checked_in
         }.forEach {
-            when(it.key) {
+            when (it.key) {
                 true -> checkIn(it.value)
                 false -> checkOut(it.value)
             }
         }
 
-        resultReceiver.send(RESULT_UPDATED, Bundle())
+        launch(UI) {
+            toast("Updated ${attendeesToUpdate.size} attendees")
+        }
     }
 
     private fun checkOut(attendees: List<Attendee>) {
-        for(attendee in attendees) {
+        for (attendee in attendees) {
             try {
                 getChangeFormResponse(attendee, "accepted");
                 resultReceiver.send(RESULT_UPDATED, Bundle())
                 db.attendeeDAO().updateAttendees(attendee.copy(needs_update = false))
-            } catch (e : Exception) {
+            } catch (e: Exception) {
                 Log.e(TAG, "Cannot update attendee $attendee", e)
             }
         }
     }
 
     private fun checkIn(attendees: List<Attendee>) {
-        for(attendee in attendees) {
+        for (attendee in attendees) {
             try {
                 getChangeFormResponse(attendee, "arrived");
-                resultReceiver.send(RESULT_UPDATED, Bundle())
                 db.attendeeDAO().updateAttendees(attendee.copy(needs_update = false))
-            } catch (e : Exception) {
+            } catch (e: MismatchedStateException) {
+                db.attendeeDAO().updateAttendees(attendee.copy(needs_update = false))
+            } catch (e: Exception) {
                 Log.e(TAG, "Cannot update attendee $attendee", e)
             }
         }
-
     }
 
     private fun getChangeFormResponse(attendee: Attendee, newState: String) {
@@ -144,7 +150,7 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
         val url = getResponse.request().url()
         val newStateValues = url.queryParameterValues("new_state")
 
-        if(!newStateValues.contains(newState))
+        if (!newStateValues.contains(newState))
             throw MismatchedStateException(newState, newStateValues, url.toString())
 
         getResponse.body()?.let {
@@ -156,10 +162,10 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
                 val authenticityTokens = newForm.getElementsByAttributeValue("name", "authenticity_token")
                 val action = newForm.attr("action")
 
-                if(authenticityTokens.size == 0)
+                if (authenticityTokens.size == 0)
                     throw HtmlParseException("authenticity_token", html)
 
-                if(action.isEmpty())
+                if (action.isEmpty())
                     throw HtmlParseException("action", html)
 
                 val authenticityToken = authenticityTokens[0]
@@ -174,8 +180,7 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
                 val postResponse = okHttpClient.newCall(Request.Builder().url("https://admin.konfeo.com$action").post(body).build()).execute()
                 Log.d(TAG, "Post response received new url is ${postResponse.request().url()}")
                 postResponse.close()
-            }
-            finally {
+            } finally {
                 it.close()
             }
 
@@ -185,13 +190,15 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
     private fun handleActionImport() {
         val enabledEvents = db.eventsDAO().getEnabledEvents()
 
-        if(enabledEvents.isEmpty()) {
-            launch (UI) {
+        if (enabledEvents.isEmpty()) {
+            launch(UI) {
                 toast("Enable at least one event")
             }
             startActivity(Intent(this, EventListActivity::class.java))
             return
         }
+
+        val attendeeIdsToUpdate = db.attendeeDAO().getAttendeeIdsToUpdate(enabledEvents.map { it.id })
 
         enabledEvents.forEach {
             val eventId = it.id
@@ -202,19 +209,8 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
 
                 val records = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(it.charStream())
 
-                records.forEach({
-                    val id = it.get(0).toLong()
-                        attendees.add(Attendee(
-                                id = id,
-                                first_name = it.get("Imię"),
-                                last_name = it.get("Nazwisko"),
-                                email = it.get("E-mail"),
-                                group = it.get("Grupa"),
-                                number = it.get("Number biletu").toLongOrNull(),
-                                checked_in = it.get("Status").equals("Obecny", ignoreCase = true),
-                                event_id = eventId
-                        )
-                        )
+                records.filter { !attendeeIdsToUpdate.contains(it.get(0).toLong()) }.forEach({
+                    importAttendee(it, attendees, eventId)
                 })
 
                 db.attendeeDAO().insertAttendees(attendees)
@@ -224,6 +220,36 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
         }
 
         resultReceiver.send(RESULT_ATTENDEES_PARSED, Bundle())
+    }
+
+    /**
+     * update needed| outgoing present | incoming present | import
+     * 1 | 0 | 0
+     * 1 | 1 | 0 -> skip
+     * 1 | 0 | 1 -> import
+     * 1 | 1 | 0 -> skip
+     */
+    private fun importAttendee(csvRecord: CSVRecord, attendees: MutableList<Attendee>, eventId: Long) {
+        val id = csvRecord.get(0).toLong()
+
+        val firstName = csvRecord.get("Imię")
+        val lastName = csvRecord.get("Nazwisko")
+        val email = csvRecord.get("E-mail")
+        val group = csvRecord.get("Grupa")
+        val ticketNumber = csvRecord.get("Number biletu")
+        val checkedIn = csvRecord.get("Status").equals("Obecny", ignoreCase = true)
+
+        attendees.add(Attendee(
+                id = id,
+                first_name = firstName,
+                last_name = lastName,
+                email = email,
+                group = group,
+                number = ticketNumber.toLongOrNull(),
+                checked_in = checkedIn,
+                event_id = eventId
+        )
+        )
     }
 
     /**
