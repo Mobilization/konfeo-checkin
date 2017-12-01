@@ -20,9 +20,9 @@ interface AttendeeDAO {
     @Query("SELECT * FROM attendees WHERE event_id IN (:eventIds)")
     fun getAttendees(eventIds: List<Long>) : List<Attendee>
 
-    @Query("SELECT * FROM attendees WHERE needs_update = 1 AND eventId IN (:eventIds)")
+    @Query("SELECT * FROM attendees WHERE needs_update = 1 AND event_id IN (:eventIds)")
     fun getAttendeesToUpdate(eventIds: List<Long>) : List<Attendee>
 
-    @Query("SELECT id FROM attendees WHERE needs_update = 1 AND eventId IN (:eventIds)")
+    @Query("SELECT id FROM attendees WHERE needs_update = 1 AND event_id IN (:eventIds)")
     fun getAttendeeIdsToUpdate(eventIds: List<Long>) : List<Long>
 }
