@@ -6,6 +6,19 @@
     android:layout_height="match_parent"
     tools:context="pl.mobilization.konfeo.checkin.AttendeesActivity">
 
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbarAttendees"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <SearchView
+            android:id="@+id/searchView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </android.support.v7.widget.Toolbar>
+
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recyclerViewAttendees"
         android:layout_width="0dp"
@@ -13,7 +26,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbarAttendees"
         app:layout_constraintVertical_bias="0.0" />
 
 

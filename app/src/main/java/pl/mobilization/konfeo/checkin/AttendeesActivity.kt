@@ -15,8 +15,9 @@ import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
 import pl.mobilization.konfeo.checkin.entities.KonfeoDatabase
 
-import android.support.v7.widget.SearchView
 import pl.mobilization.konfeo.checkin.adapters.AttendeeAdapter
+
+import android.widget.SearchView
 
 
 class AttendeesActivity : AppCompatActivity() {
@@ -33,28 +34,9 @@ class AttendeesActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_attendees)
 
-
-
+        setSupportActionBar(toolbarAttendees)
         supportActionBar?.setDisplayShowTitleEnabled(false)
 
-        recyclerViewAttendees.itemAnimator = DefaultItemAnimator()
-        recyclerViewAttendees.layoutManager = LinearLayoutManager(this)
-
-        attendeeAdapter = AttendeeAdapter(this)
-        recyclerViewAttendees.adapter = attendeeAdapter
-
-        resetAttendees()
-    }
-
-    private fun filter_attendees(query: String) {
-        attendeeAdapter.filter = query
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate( R.menu.menu, menu)
-
-        val searchView = menu.findItem(R.id.app_bar_search).actionView as SearchView
-        searchView.setIconifiedByDefault(false) // Do not iconify the widget; expand it by default
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextChange(newText: String): Boolean {
                 if (newText.trim().length in 1..2) {
@@ -71,7 +53,13 @@ class AttendeesActivity : AppCompatActivity() {
             }
         })
 
-        return super.onCreateOptionsMenu(menu)
+        recyclerViewAttendees.itemAnimator = DefaultItemAnimator()
+        recyclerViewAttendees.layoutManager = LinearLayoutManager(this)
+
+        attendeeAdapter = AttendeeAdapter(this)
+        recyclerViewAttendees.adapter = attendeeAdapter
+
+        resetAttendees()
     }
 
     internal inner class AttendeesReceiver : ResultReceiver(Handler(Looper.getMainLooper())) {
@@ -83,6 +71,9 @@ class AttendeesActivity : AppCompatActivity() {
     private fun resetAttendees() {
         launch {
             val eventsId = db.eventsDAO().getEnabledEventIds()
+            if (eventsId.isEmpty())
+                return@launch
+
             val attendees = db.attendeeDAO().getAttendees(eventsId)
 
             launch(UI) {
