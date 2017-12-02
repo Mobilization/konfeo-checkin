@@ -8,7 +8,7 @@ import android.arch.persistence.room.*
 
 @Dao
 interface AttendeeDAO {
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAttendees(attendees: List<Attendee>)
 
     @Update
