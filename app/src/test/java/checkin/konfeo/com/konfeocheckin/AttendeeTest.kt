@@ -24,7 +24,7 @@ class AttendeeTest {
             number = 2,
             needs_update = false,
             group = "Organizer",
-            event_id = "0"
+            event_id = 0
     )
 
     @Test

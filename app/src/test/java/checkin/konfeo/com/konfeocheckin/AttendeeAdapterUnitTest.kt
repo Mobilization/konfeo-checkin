@@ -27,7 +27,7 @@ class AttendeeAdapterUnitTest {
             number = 1,
             needs_update = false,
             group = "Organizer",
-            event_id = "0"
+            event_id = 0
     )
 
     private val ANDRZEJ = Attendee(
@@ -38,7 +38,7 @@ class AttendeeAdapterUnitTest {
             number = 2,
             needs_update = false,
             group = "Organizer",
-                    event_id = "0"
+                    event_id = 0
 
     )
 
