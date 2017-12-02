@@ -282,7 +282,7 @@ class KonfeoIntentService : IntentService("KonfeoIntentService") {
                 val elementsByEventPayClass = eventFullViewTable.getElementsByClass("event-pay")
                 parseEvent(elementsByEventPayClass, events)
 
-                val elementsByEventFreeClass = eventFullViewTable.getElementsByClass("event-pay")
+                val elementsByEventFreeClass = eventFullViewTable.getElementsByClass("event-free")
                 parseEvent(elementsByEventFreeClass, events)
             }
 
