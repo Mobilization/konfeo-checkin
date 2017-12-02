@@ -11,4 +11,4 @@ import android.arch.persistence.room.PrimaryKey
 data class Event(
         @PrimaryKey val id: Long,
         val name: String,
-        val enabled: Boolean = true)
+        val enabled: Boolean = false)
