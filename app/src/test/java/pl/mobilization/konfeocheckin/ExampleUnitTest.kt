@@ -1,8 +1,10 @@
 package pl.mobilization.konfeocheckin
 
+import org.junit.Assert
 import org.junit.Test
 
 import org.junit.Assert.*
+import retrofit2.Retrofit
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -11,7 +13,19 @@ import org.junit.Assert.*
  */
 class ExampleUnitTest {
     @Test
-    fun addition_isCorrect() {
-        assertEquals(4, 2 + 2)
+    fun canAccessLoginPage() {
+        val endpoint = Retrofit.Builder().baseUrl("https://admin.konfeo.com").build().create(KonfeoEndpoint::class.java)
+
+        val login = endpoint.login()
+
+
+        val execute = login.execute()
+
+        val body = execute.body()
+
+        assertTrue(execute.isSuccessful)
+        assertFalse(execute.raw().isRedirect)
+
+
     }
 }
