@@ -14,4 +14,7 @@ interface KonfeoEndpoint {
 
     @GET("/en/login")
     fun login(): Call<Document>
+
+    @GET("/en/login")
+    fun login2(): Call<LoginPage>
 }

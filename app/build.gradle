@@ -33,4 +33,6 @@ dependencies {
     implementation 'com.squareup.retrofit2:retrofit:2.3.0'
     api 'com.google.code.findbugs:jsr305:3.0.2'
     implementation 'org.jsoup:jsoup:1.11.2'
+    implementation 'pl.droidsonroids:jspoon:1.0.1'
+    implementation 'pl.droidsonroids.retrofit2:converter-jspoon:1.0.1'
 }
